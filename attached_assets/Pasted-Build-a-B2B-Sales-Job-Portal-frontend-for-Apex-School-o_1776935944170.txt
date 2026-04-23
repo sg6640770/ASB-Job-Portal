@@ -1,0 +1,284 @@
+Build a B2B Sales Job Portal frontend for "Apex School of Business" (ASB) using React.js + Vite + Tailwind CSS. This connects to a LIVE Supabase database.
+
+---
+
+## SUPABASE CONNECTION
+- Supabase URL: https://zmmpbjcnuwnewymwwmon.supabase.co
+- Supabase Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbXBiamNudXduZXd5bXd3bW9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4OTQyNjgsImV4cCI6MjA5MjQ3MDI2OH0.HZRdmszZEzXyYmuKNqmZpgw7FwiCpZWmkDcRIdKtf1c
+- Table name: job_listings
+- Install: npm install @supabase/supabase-js
+
+Create /src/lib/supabase.js:
+import { createClient } from '@supabase/supabase-js'
+export const supabase = createClient('YOUR_URL', 'YOUR_ANON_KEY')
+
+---
+
+## DATABASE SCHEMA
+The job_listings table has these exact columns (all text type):
+- job_id (primary key)
+- job_title
+- company_name
+- location
+- date_posted (ISO string e.g. "2026-04-21T09:26:52.000Z")
+- employment_type
+- apply_link
+- seniority_level
+
+---
+
+## TECH STACK
+- React 18 + Vite
+- Tailwind CSS (install and configure properly)
+- @supabase/supabase-js for data fetching
+- No React Router needed — single page app
+- No authentication
+
+---
+
+## DESIGN TOKENS
+- Primary: #1E3A5F (deep navy)
+- Accent: #F97316 (orange)  
+- Background: #F1F5F9
+- Card background: #FFFFFF
+- Text primary: #0F172A
+- Text muted: #64748B
+- Border: #E2E8F0
+- Font: Inter from Google Fonts
+
+---
+
+## APP STRUCTURE
+
+### File structure:
+src/
+  lib/supabase.js
+  data/jobData.js         ← role category mapping logic
+  hooks/useJobs.js        ← Supabase fetch hook
+  components/
+    Navbar.jsx
+    Hero.jsx
+    FilterSidebar.jsx
+    JobCard.jsx
+    JobList.jsx
+    ActiveFilterChips.jsx
+    EmptyState.jsx
+    Pagination.jsx
+    Footer.jsx
+  App.jsx
+  main.jsx
+  index.css
+
+---
+
+## COMPONENT DETAILS
+
+### useJobs.js hook
+Fetch ALL jobs from Supabase on mount:
+const { data, error } = await supabase
+  .from('job_listings')
+  .select('*')
+  .order('date_posted', { ascending: false })
+
+Store in state. All filtering/searching happens CLIENT-SIDE on the fetched array (do not use Supabase filters — fetch everything once).
+
+Show loading spinner while fetching.
+
+---
+
+### ROLE CATEGORY MAPPING (in jobData.js)
+Write a function getRoleCategory(job_title) that returns one of these categories based on keyword matching in the title (case-insensitive):
+
+- "SDR" → title includes: sdr, sales development representative, sales development specialist
+- "BDR" → title includes: bdr, business development representative
+- "Account Executive" → title includes: account executive
+- "Business Development" → title includes: business development manager, business development executive, business development associate, bdm, bde, bd manager
+- "Account Manager" → title includes: account manager, key account
+- "Lead Generation" → title includes: lead generation
+- "Marketing" → title includes: marketing, campaign, crm specialist, performance marketing, demand generation, growth marketing, marketing automation, marketing analyst
+- "Customer Success" → title includes: customer success
+- "Sales Manager" → title includes: sales manager, area sales, territory sales, sales executive, sales consultant, inside sales
+- "RevOps" → title includes: revops, revenue operations, sales operations
+- "Other" → fallback for everything else
+
+---
+
+### WORK MODE DETECTION (in jobData.js)
+Write a function getWorkMode(job_title, location) that returns "Remote", "Hybrid", or "Onsite":
+- "Remote" if title or location contains "remote" or "wfh" or "work from home"
+- "Hybrid" if title contains "hybrid"
+- "Onsite" otherwise
+
+---
+
+### DATE FORMATTING (in jobData.js)
+Write a function getRelativeDate(date_posted) that returns:
+- "Today" if same calendar day as now
+- "Yesterday"
+- "X days ago" for up to 29 days
+- "X months ago" for 30+ days
+
+---
+
+### COMPANY INITIAL AVATAR
+Since there are no logos, generate a colored avatar square showing the first 2 letters of company_name. Use a deterministic color from this palette based on company name char code: #3B82F6, #8B5CF6, #EC4899, #10B981, #F59E0B, #EF4444, #06B6D4, #84CC16
+
+---
+
+## NAVBAR
+- Left: "ASB" in navy bold + "Job Portal" in orange, then full name "Apex School of Business" in small gray text below
+- Right: pill badge showing live job count e.g. "137 Live Jobs"
+- Sticky, white background, bottom shadow
+- Mobile: hamburger menu (just shows the badge on mobile)
+
+---
+
+## HERO SECTION
+- Navy gradient background (#1E3A5F to #2D5A8E)
+- White headline: "Find Your B2B Sales Career"
+- Subheadline in light blue: "SDR, BDR, Account Executive & more — curated for Apex students"
+- Search bar: full width, white background, rounded-xl, with search icon
+  - Searches across: job_title, company_name, location (all client-side)
+  - Orange search button: "Search"
+- Below search bar: 3 stat pills — "137 Jobs Live", "India-wide", "Updated Daily"
+
+---
+
+## MAIN LAYOUT
+Two-column layout below hero:
+- Left: FilterSidebar (w-72, sticky top-20)
+- Right: JobList (flex-1)
+- On mobile: sidebar becomes a slide-in drawer triggered by a "Filters" button
+
+---
+
+## FILTER SIDEBAR
+White card, rounded-xl, p-4, shadow-sm
+
+Sections (each collapsible with a chevron toggle):
+
+1. **Role Category** (multi-select checkboxes)
+   Options derived from getRoleCategory mapping:
+   SDR | BDR | Account Executive | Business Development | Account Manager | Lead Generation | Marketing | Customer Success | Sales Manager | RevOps | Other
+
+2. **Seniority Level** (multi-select checkboxes)
+   Read unique values from seniority_level column:
+   Entry level | Associate | Mid-Senior level | Not Applicable | (empty → show as "Not Specified")
+
+3. **Work Mode** (radio buttons)
+   All | Remote | Hybrid | Onsite
+
+4. **Employment Type** (radio buttons)
+   All | Full-time | Internship | Contract
+
+5. **Date Posted** (radio buttons)
+   Any time | Last 24 hours | Last 7 days | Last 30 days
+
+6. **Location Search** (text input)
+   Client-side filter on location field
+
+At bottom: "Clear All Filters" button — orange outline style
+
+---
+
+## ACTIVE FILTER CHIPS
+Shown above the job list, below the results count.
+Each active filter renders as a dismissible chip:
+- Orange background, white text, small ✕ button
+- Clicking ✕ removes that specific filter
+- "Clear all" link at the end if 2+ chips
+
+---
+
+## JOB LIST PANEL
+
+Top row:
+- Left: "{n} jobs found" in bold navy
+- Right: Sort dropdown — "Newest First" (default) | "Oldest First" | "Company A–Z"
+
+Job cards: 15 per page
+
+### JOB CARD (white, rounded-xl, shadow-sm, hover:shadow-md transition)
+Layout:
+[Company Avatar 48px] | [Job Title bold navy] | [Apply Button orange]
+                       | [Company Name gray]   |
+                       | [Badges row]          |
+                       | [Location + Date]     |
+
+Badges row (small pills):
+- Role Category pill: navy bg, white text
+- Seniority pill: light gray bg, dark text
+- Work Mode pill: green=Remote / blue=Hybrid / gray=Onsite
+- Employment Type pill: light purple bg
+
+Bottom row:
+- 📍 Location (gray, truncated at 35 chars)
+- 🕒 Relative date ("2 days ago")
+- "via LinkedIn" in small gray italic text
+
+Apply button:
+- Orange bg, white text, "Apply Now →"
+- Opens apply_link in new tab
+- On hover: slightly darker orange
+
+---
+
+## EMPTY STATE
+Centered in job list area:
+- SVG icon: magnifying glass (draw inline SVG, navy color)
+- "No jobs match your filters"
+- Subtext: "Try adjusting your search or clearing some filters"
+- Orange button: "Clear All Filters"
+
+---
+
+## PAGINATION
+Bottom of job list:
+- Previous / Next buttons
+- Page number buttons (show max 5 at a time with ... ellipsis)
+- "Showing 1–15 of 137 jobs" text
+- Scroll to top of job list on page change
+
+---
+
+## LOADING STATE
+While Supabase is fetching:
+- Show 6 skeleton cards (gray animated pulse rectangles matching card shape)
+
+---
+
+## ERROR STATE
+If Supabase fetch fails:
+- Red banner: "Failed to load jobs. Please try again."
+- Retry button
+
+---
+
+## FOOTER
+Navy background (#1E3A5F), white text
+- Left: "© 2026 Apex School of Business"  
+- Right: "Job data sourced from LinkedIn • Updated daily"
+- Center: "Built for Apex Students"
+- Padding: py-8
+
+---
+
+## RESPONSIVE DESIGN
+- Desktop (1024px+): 2-column layout
+- Tablet (768px): sidebar collapses to filter drawer button
+- Mobile (< 768px): stacked layout, filter drawer overlay, cards full width
+
+---
+
+## IMPORTANT IMPLEMENTATION NOTES
+1. Install dependencies: npm install @supabase/supabase-js
+2. Add Tailwind properly: npx tailwindcss init -p
+3. Add Inter font via Google Fonts import in index.css
+4. All filtering is client-side — fetch once, filter in memory
+5. The seniority_level field can be empty string for some records — handle gracefully as "Not Specified"
+6. Some apply_link values contain encoded URLs with tracking params — use them as-is
+7. location field contains values like "India", "Bengaluru, Karnataka, India", "Greater Bengaluru Area" — location filter should be a simple case-insensitive includes() check
+8. Do NOT use any mock/static data — all data must come from Supabase
+9. Make sure Tailwind classes compile correctly — use standard utility classes only
+
+Start by creating the Supabase client, then the data utility functions, then build components bottom-up: JobCard → JobList → FilterSidebar → Hero → Navbar → App.
