@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Footer from '@/components/Footer';
@@ -9,12 +9,18 @@ import FilterSidebar, {
 import JobList from '@/components/JobList';
 import ActiveFilterChips, { type Chip } from '@/components/ActiveFilterChips';
 import JobSkeleton from '@/components/JobSkeleton';
+import ResumeUploadModal from '@/components/ResumeUploadModal';
+import MatchedJobsSection, {
+  type MatchedJob,
+  type CandidateInfo,
+} from '@/components/MatchedJobsSection';
 import { useJobs } from '@/hooks/useJobs';
 import {
   getDaysSince,
   getRoleCategory,
   getWorkMode,
 } from '@/data/jobData';
+import type { Job } from '@/lib/supabase';
 import { SlidersHorizontal, X } from 'lucide-react';
 
 type SortKey = 'newest' | 'oldest' | 'company';
@@ -26,11 +32,18 @@ function App() {
   const [sort, setSort] = useState<SortKey>('newest');
   const [page, setPage] = useState(1);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [resumeModalOpen, setResumeModalOpen] = useState(false);
+  const [matchedJobs, setMatchedJobs] = useState<MatchedJob[] | null>(null);
+  const [candidate, setCandidate] = useState<CandidateInfo | null>(null);
+  const matchedRef = useRef<HTMLDivElement>(null);
 
   const seniorityOptions = useMemo(() => {
     const set = new Set<string>();
     for (const j of jobs) {
-      const v = j.seniority_level && j.seniority_level.trim() !== '' ? j.seniority_level : 'Not Specified';
+      const v =
+        j.seniority_level && j.seniority_level.trim() !== ''
+          ? j.seniority_level
+          : 'Not Specified';
       set.add(v);
     }
     return Array.from(set).sort();
@@ -52,7 +65,10 @@ function App() {
       }
 
       if (filters.seniorityLevels.length > 0) {
-        const s = j.seniority_level && j.seniority_level.trim() !== '' ? j.seniority_level : 'Not Specified';
+        const s =
+          j.seniority_level && j.seniority_level.trim() !== ''
+            ? j.seniority_level
+            : 'Not Specified';
         if (!filters.seniorityLevels.includes(s)) return false;
       }
 
@@ -62,7 +78,8 @@ function App() {
       }
 
       if (filters.employmentType !== 'All') {
-        if ((j.employment_type || '').toLowerCase() !== filters.employmentType.toLowerCase()) return false;
+        if ((j.employment_type || '').toLowerCase() !== filters.employmentType.toLowerCase())
+          return false;
       }
 
       if (filters.datePosted !== 'Any time') {
@@ -89,10 +106,15 @@ function App() {
     return out;
   }, [jobs, searchQuery, filters, sort]);
 
-  // Reset to page 1 when filter/search/sort changes
   useEffect(() => {
     setPage(1);
   }, [searchQuery, filters, sort]);
+
+  useEffect(() => {
+    if (matchedJobs && matchedRef.current) {
+      matchedRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [matchedJobs]);
 
   const chips: Chip[] = useMemo(() => {
     const c: Chip[] = [];
@@ -156,6 +178,12 @@ function App() {
     setSearchQuery('');
   };
 
+  const handleMatched = (raw: unknown) => {
+    const { matches, candidate: cand } = normalizeMatches(raw, jobs);
+    setMatchedJobs(matches);
+    setCandidate(cand);
+  };
+
   return (
     <div className="min-h-screen bg-[#F1F5F9] flex flex-col font-sans text-[#0F172A]">
       <Navbar jobCount={jobs.length} />
@@ -163,6 +191,7 @@ function App() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         jobCount={jobs.length}
+        onOpenResumeModal={() => setResumeModalOpen(true)}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -176,6 +205,19 @@ function App() {
             >
               Retry
             </button>
+          </div>
+        )}
+
+        {matchedJobs && (
+          <div ref={matchedRef}>
+            <MatchedJobsSection
+              matches={matchedJobs}
+              candidate={candidate}
+              onViewAll={() => {
+                setMatchedJobs(null);
+                setCandidate(null);
+              }}
+            />
           </div>
         )}
 
@@ -253,9 +295,146 @@ function App() {
         </div>
       )}
 
+      <ResumeUploadModal
+        open={resumeModalOpen}
+        onClose={() => setResumeModalOpen(false)}
+        onMatched={handleMatched}
+      />
+
       <Footer />
     </div>
   );
+}
+
+function normalizeMatches(
+  raw: unknown,
+  allJobs: Job[],
+): { matches: MatchedJob[]; candidate: CandidateInfo | null } {
+  // Unwrap outer array (n8n often wraps payloads as [ { ... } ])
+  let root: unknown = raw;
+  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === 'object') {
+    root = raw[0];
+  }
+
+  let arr: unknown[] = [];
+  let candidate: CandidateInfo | null = null;
+
+  if (Array.isArray(root)) {
+    arr = root;
+  } else if (root && typeof root === 'object') {
+    const obj = root as Record<string, unknown>;
+    if (Array.isArray(obj.matched_jobs)) arr = obj.matched_jobs as unknown[];
+    else if (Array.isArray(obj.matches)) arr = obj.matches as unknown[];
+    else if (Array.isArray(obj.jobs)) arr = obj.jobs as unknown[];
+    else if (Array.isArray(obj.data)) arr = obj.data as unknown[];
+    else if (Array.isArray(obj.results)) arr = obj.results as unknown[];
+
+    if (obj.candidate && typeof obj.candidate === 'object') {
+      const c = obj.candidate as Record<string, unknown>;
+      candidate = {
+        name: typeof c.name === 'string' ? c.name : undefined,
+        email: typeof c.email === 'string' ? c.email : undefined,
+        skills_count:
+          typeof c.skills_count === 'number' ? c.skills_count : undefined,
+        experience_years:
+          typeof c.experience_years === 'number'
+            ? c.experience_years
+            : undefined,
+        total_jobs_scanned:
+          typeof obj.total_jobs_scanned === 'number'
+            ? obj.total_jobs_scanned
+            : undefined,
+        matched_jobs_count:
+          typeof obj.matched_jobs_count === 'number'
+            ? obj.matched_jobs_count
+            : undefined,
+      };
+    }
+  }
+
+  const byId = new Map(allJobs.map((j) => [String(j.job_id), j]));
+  const seen = new Set<string>();
+
+  const result: MatchedJob[] = [];
+  for (const item of arr) {
+    if (!item || typeof item !== 'object') continue;
+    const o = item as Record<string, unknown>;
+
+    const score = pickScore(o);
+
+    const id =
+      (o.job_id as string | undefined) ??
+      (o.id as string | undefined) ??
+      (o.jobId as string | undefined);
+
+    const idKey = id != null ? String(id) : `match-${result.length}`;
+    if (seen.has(idKey)) continue;
+    seen.add(idKey);
+
+    const existing = id != null ? byId.get(String(id)) : undefined;
+
+    const job: Job = {
+      job_id: idKey,
+      job_title: String(o.job_title ?? o.title ?? existing?.job_title ?? ''),
+      company_name: String(
+        o.company_name ?? o.company ?? existing?.company_name ?? '',
+      ),
+      location: String(o.location ?? existing?.location ?? ''),
+      date_posted: String(
+        o.date_posted ?? existing?.date_posted ?? new Date().toISOString(),
+      ),
+      employment_type: String(
+        o.employment_type ?? existing?.employment_type ?? '',
+      ),
+      apply_link: String(
+        o.apply_link ?? o.url ?? existing?.apply_link ?? '#',
+      ),
+      seniority_level: String(
+        o.seniority_level ?? existing?.seniority_level ?? '',
+      ),
+    };
+
+    if (!job.job_title) continue;
+
+    const matchingSkills = Array.isArray(o.matching_skills)
+      ? (o.matching_skills as unknown[]).filter(
+          (s): s is string => typeof s === 'string',
+        )
+      : undefined;
+
+    result.push({
+      ...job,
+      match_score: score,
+      match_reason:
+        typeof o.match_reason === 'string' ? o.match_reason : undefined,
+      matching_skills: matchingSkills,
+    });
+  }
+
+  result.sort((a, b) => b.match_score - a.match_score);
+  return { matches: result, candidate };
+}
+
+function pickScore(o: Record<string, unknown>): number {
+  const candidates = [
+    'match_score',
+    'matchScore',
+    'score',
+    'match',
+    'match_percentage',
+    'matchPercentage',
+    'percentage',
+    'similarity',
+  ];
+  for (const k of candidates) {
+    const v = o[k];
+    if (typeof v === 'number') return v <= 1 ? v * 100 : v;
+    if (typeof v === 'string' && v.trim() !== '') {
+      const n = parseFloat(v.replace('%', ''));
+      if (!Number.isNaN(n)) return n <= 1 ? n * 100 : n;
+    }
+  }
+  return 0;
 }
 
 export default App;
