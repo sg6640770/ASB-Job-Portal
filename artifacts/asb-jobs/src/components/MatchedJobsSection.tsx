@@ -24,7 +24,7 @@ type Props = {
 
 function scoreColor(score: number): string {
   if (score >= 85) return 'bg-emerald-500';
-  if (score >= 70) return 'bg-[#F97316]';
+  if (score >= 70) return 'bg-[#111827]';
   if (score >= 50) return 'bg-amber-500';
   return 'bg-slate-500';
 }
@@ -35,10 +35,10 @@ export default function MatchedJobsSection({
   onViewAll,
 }: Props) {
   return (
-    <section className="bg-gradient-to-br from-[#F1F5F9] to-white border-2 border-[#F97316]/30 rounded-2xl p-4 sm:p-6 mb-6 shadow-sm">
+    <section className="bg-white border-2 border-[#6B31F5]/20 rounded-2xl p-4 sm:p-6 mb-6 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
         <div className="flex-1">
-          <h2 className="text-xl sm:text-2xl font-bold text-[#1E3A5F]">
+          <h2 className="text-xl sm:text-2xl font-bold text-[#6B31F5]">
             ✨ Jobs Matched to Your Resume
           </h2>
           <p className="text-sm text-[#64748B] mt-1">
@@ -50,14 +50,13 @@ export default function MatchedJobsSection({
           {candidate && (
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
               {candidate.name && (
-                <span className="px-2.5 py-1 rounded-full bg-[#1E3A5F] text-white font-medium">
+                <span className="px-2.5 py-1 rounded-full bg-[#6B31F5] text-white font-medium">
                   {candidate.name}
                 </span>
               )}
               {typeof candidate.experience_years === 'number' && (
                 <span className="px-2.5 py-1 rounded-full bg-white border border-[#E2E8F0] text-[#0F172A]">
-                  {candidate.experience_years} yr
-                  {candidate.experience_years === 1 ? '' : 's'} experience
+                  {candidate.experience_years} yr{candidate.experience_years === 1 ? '' : 's'} experience
                 </span>
               )}
               {typeof candidate.skills_count === 'number' && (
@@ -76,7 +75,7 @@ export default function MatchedJobsSection({
         <button
           type="button"
           onClick={onViewAll}
-          className="inline-flex items-center justify-center px-4 py-2 bg-white border border-[#1E3A5F] text-[#1E3A5F] hover:bg-[#1E3A5F] hover:text-white rounded-md text-sm font-medium transition flex-shrink-0"
+          className="inline-flex items-center justify-center px-4 py-2 border border-[#6B31F5] text-[#6B31F5] hover:bg-[#6B31F5] hover:text-white rounded-md text-sm font-medium transition flex-shrink-0"
         >
           View All Jobs
         </button>
@@ -87,7 +86,7 @@ export default function MatchedJobsSection({
           {matches.map((job, idx) => (
             <div
               key={`${job.job_id}-${idx}`}
-              className="relative bg-white rounded-lg"
+              className="relative bg-white rounded-lg border border-[#E2E8F0]"
             >
               <div
                 className={`absolute -top-2 -right-2 z-10 px-3 py-1 rounded-full ${scoreColor(
@@ -103,8 +102,8 @@ export default function MatchedJobsSection({
                 (job.matching_skills && job.matching_skills.length > 0)) && (
                 <div className="px-4 sm:px-5 pb-4 -mt-2">
                   {job.match_reason && (
-                    <p className="text-sm text-[#0F172A] bg-[#F1F5F9] border-l-4 border-[#F97316] rounded-r px-3 py-2 mb-2">
-                      <span className="font-semibold text-[#1E3A5F]">
+                    <p className="text-sm text-[#0F172A] bg-[#F5F3FF] border-l-4 border-[#6B31F5] rounded-r px-3 py-2 mb-2">
+                      <span className="font-semibold text-[#6B31F5]">
                         Why it matches:
                       </span>{' '}
                       {job.match_reason}
@@ -112,7 +111,7 @@ export default function MatchedJobsSection({
                   )}
                   {job.matching_skills && job.matching_skills.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
-                      <span className="text-xs font-medium text-[#64748B] py-0.5">
+                      <span className="text-xs font-medium text-[#6B7280] py-0.5">
                         Matching skills:
                       </span>
                       {job.matching_skills.slice(0, 8).map((s) => (

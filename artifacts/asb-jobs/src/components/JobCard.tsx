@@ -14,11 +14,19 @@ export default function JobCard({ job }: { job: Job }) {
   const dateLabel = getRelativeDate(job.date_posted);
   const avatarColor = getCompanyAvatarColor(job.company_name || '');
   const initials = getCompanyInitials(job.company_name || '');
-  const seniority = job.seniority_level && job.seniority_level.trim() !== '' ? job.seniority_level : 'Not Specified';
-  const employmentType = job.employment_type && job.employment_type.trim() !== '' ? job.employment_type : 'Not Specified';
+  const seniority =
+    job.seniority_level && job.seniority_level.trim() !== ''
+      ? job.seniority_level
+      : 'Not Specified';
+  const employmentType =
+    job.employment_type && job.employment_type.trim() !== ''
+      ? job.employment_type
+      : 'Not Specified';
 
   const truncatedLocation =
-    job.location && job.location.length > 35 ? job.location.slice(0, 35) + '…' : job.location;
+    job.location && job.location.length > 35
+      ? job.location.slice(0, 35) + '…'
+      : job.location;
 
   const workModeColors: Record<string, string> = {
     Remote: 'bg-green-100 text-green-800',
@@ -39,15 +47,15 @@ export default function JobCard({ job }: { job: Job }) {
         <div className="flex-1 min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
             <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-bold text-[#1E3A5F] leading-snug break-words">
+              <h3 className="text-base sm:text-lg font-bold text-[#0F172A] leading-snug break-words">
                 {job.job_title}
               </h3>
               <p className="text-sm text-[#64748B] mt-0.5">{job.company_name}</p>
 
               <div className="flex flex-wrap gap-1.5 mt-3">
-                <Badge className="bg-[#1E3A5F] text-white">{roleCategory}</Badge>
+                <Badge className="bg-[#6B31F5] text-white">{roleCategory}</Badge>
                 <Badge className="bg-gray-100 text-gray-700">{seniority}</Badge>
-                <Badge className={workModeColors[workMode]}>{workMode}</Badge>
+                <Badge className={workModeColors[workMode] ?? 'bg-gray-100 text-gray-700'}>{workMode}</Badge>
                 <Badge className="bg-purple-100 text-purple-800">{employmentType}</Badge>
               </div>
 
@@ -70,7 +78,7 @@ export default function JobCard({ job }: { job: Job }) {
               href={job.apply_link}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#F97316] hover:bg-[#EA670C] text-white font-medium rounded-lg text-sm transition whitespace-nowrap"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#6B31F5] hover:bg-[#5B21DC] text-white font-medium rounded-lg text-sm transition whitespace-nowrap"
             >
               Apply Now
               <ArrowRight className="w-4 h-4" />

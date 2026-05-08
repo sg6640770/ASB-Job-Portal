@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { X, UploadCloud, FileText, Loader2 } from 'lucide-react';
 
 const WEBHOOK_URL =
-  'https://shreyahubcredo.app.n8n.cloud/webhook-test/get-resume-based-filtering';
+  'https://shreyahubcredo.app.n8n.cloud/webhook/get-resume-based-filtering';
 const TIMEOUT_MS = 30000;
 
 type Props = {
@@ -111,7 +111,7 @@ export default function ResumeUploadModal({ open, onClose, onMatched }: Props) {
       <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-start justify-between p-5 border-b border-[#E2E8F0]">
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-[#1E3A5F]">
+            <h2 className="text-lg sm:text-xl font-bold text-[#6B31F5]">
               Find Jobs Matching Your Resume
             </h2>
             <p className="text-sm text-[#64748B] mt-1">
@@ -132,7 +132,7 @@ export default function ResumeUploadModal({ open, onClose, onMatched }: Props) {
         <div className="p-5 sm:p-6">
           {isUploading ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Loader2 className="w-10 h-10 text-[#F97316] animate-spin mb-4" />
+              <Loader2 className="w-10 h-10 text-[#111827] animate-spin mb-4" />
               <p className="text-[#0F172A] font-medium">
                 Analyzing your resume &amp; finding matches...
               </p>
@@ -153,13 +153,13 @@ export default function ResumeUploadModal({ open, onClose, onMatched }: Props) {
                 onDrop={handleDrop}
                 className={`w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition ${
                   isDragging
-                    ? 'border-[#F97316] bg-orange-50'
-                    : 'border-[#E2E8F0] hover:border-[#1E3A5F] hover:bg-[#F1F5F9]'
+                    ? 'border-[#111827] bg-orange-50'
+                    : 'border-[#E2E8F0] hover:border-[#6B31F5] hover:bg-[#F1F5F9]'
                 }`}
               >
                 {file ? (
                   <>
-                    <FileText className="w-10 h-10 text-[#1E3A5F] mb-2" />
+                    <FileText className="w-10 h-10 text-[#6B31F5] mb-2" />
                     <p className="text-sm font-medium text-[#0F172A] break-all">
                       {file.name}
                     </p>
@@ -193,7 +193,7 @@ export default function ResumeUploadModal({ open, onClose, onMatched }: Props) {
                 type="button"
                 onClick={handleSubmit}
                 disabled={!file}
-                className="mt-5 w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#F97316] hover:bg-[#EA670C] text-white font-semibold rounded-lg transition disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] disabled:cursor-not-allowed"
+                className="mt-5 w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#111827] hover:bg-[#1F2937] text-white font-semibold rounded-lg transition disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] disabled:cursor-not-allowed"
               >
                 <span>🔍 Get Matched Jobs</span>
               </button>

@@ -9,7 +9,7 @@ export default function EmptyState({ onClear }: Props) {
         height="64"
         viewBox="0 0 24 24"
         fill="none"
-        stroke="#1E3A5F"
+        stroke="#6B31F5"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -24,7 +24,7 @@ export default function EmptyState({ onClear }: Props) {
       <button
         type="button"
         onClick={onClear}
-        className="inline-flex items-center px-5 py-2 bg-[#F97316] hover:bg-[#EA670C] text-white font-medium rounded-md text-sm transition"
+        className="inline-flex items-center px-5 py-2 bg-[#111827] hover:bg-[#1F2937] text-white font-medium rounded-md text-sm transition"
       >
         Clear All Filters
       </button>
